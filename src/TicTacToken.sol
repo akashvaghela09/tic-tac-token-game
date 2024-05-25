@@ -8,16 +8,58 @@ contract TicTacToken {
     uint256 internal constant O = 2;
     uint256 internal _turns;
 
+    address public owner;
+
+    address public playerX;
+    address public playerO;
+
+    constructor(address _owner, address _playerX, address _playerO) {
+        owner = _owner;
+        playerX = _playerX;
+        playerO = _playerO;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Unauthorized");
+        _;
+    }
+
+    modifier onlyPlayer() {
+        require(_validPlayer(), "Unauthorized");
+        _;
+    }
+
+    function reset() public onlyOwner {
+        delete board;
+    }
+
+    function resetBoard() public {
+        require(msg.sender == owner, "Unauthorized");
+        delete board;
+    }
+
     function getBoard() public view returns (uint256[9] memory) {
         return board;
     }
 
-    function markSpace(uint256 space, uint256 symbol) public {
+    function markSpace(uint256 space) public {
+        require(_validPlayer(), "Unauthorized");
+        uint256 symbol = _getSymbol();
         require(_validSymbol(symbol), "Invalid symbol");
         require(_validTurn(symbol), "Not your turn");
         require(_emptySpace(space), "Already marked");
         board[space] = symbol;
         _turns++;
+    }
+
+    function _getSymbol() public view returns (uint256) {
+        if (msg.sender == playerX) return X;
+        if (msg.sender == playerO) return O;
+        return EMPTY;
+    }
+
+    function _validPlayer() internal view returns (bool) {
+        return msg.sender == playerX || msg.sender == playerO;
     }
 
     function currentTurn() public view returns (uint256) {
@@ -81,5 +123,9 @@ contract TicTacToken {
 
     function _antiDiag() internal view returns (uint256) {
         return board[2] * board[4] * board[6];
+    }
+
+    function msgSender() public view returns (address) {
+        return msg.sender;
     }
 }
